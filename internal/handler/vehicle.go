@@ -2,9 +2,13 @@ package handler
 
 import (
 	"app/internal"
+	"app/internal/service"
+	responseAPI "app/pkg/response"
+	"errors"
 	"net/http"
 
 	"github.com/bootcamp-go/web/response"
+	"github.com/go-chi/chi/v5"
 )
 
 // VehicleJSON is a struct that represents a vehicle in JSON format
@@ -23,6 +27,25 @@ type VehicleJSON struct {
 	Height          float64 `json:"height"`
 	Length          float64 `json:"length"`
 	Width           float64 `json:"width"`
+}
+
+func vehicleToVehicleJSON(v internal.Vehicle) VehicleJSON {
+	return VehicleJSON{
+		ID:              v.Id,
+		Brand:           v.Brand,
+		Model:           v.Model,
+		Registration:    v.Registration,
+		Color:           v.Color,
+		FabricationYear: v.FabricationYear,
+		Capacity:        v.Capacity,
+		MaxSpeed:        v.MaxSpeed,
+		FuelType:        v.FuelType,
+		Transmission:    v.Transmission,
+		Weight:          v.Weight,
+		Height:          v.Height,
+		Length:          v.Length,
+		Width:           v.Width,
+	}
 }
 
 // NewVehicleDefault is a function that returns a new instance of VehicleDefault
@@ -52,27 +75,53 @@ func (h *VehicleDefault) GetAll() http.HandlerFunc {
 
 		// response
 		data := make(map[int]VehicleJSON)
-		for key, value := range v {
-			data[key] = VehicleJSON{
-				ID:              value.Id,
-				Brand:           value.Brand,
-				Model:           value.Model,
-				Registration:    value.Registration,
-				Color:           value.Color,
-				FabricationYear: value.FabricationYear,
-				Capacity:        value.Capacity,
-				MaxSpeed:        value.MaxSpeed,
-				FuelType:        value.FuelType,
-				Transmission:    value.Transmission,
-				Weight:          value.Weight,
-				Height:          value.Height,
-				Length:          value.Length,
-				Width:           value.Width,
-			}
+		for key, vehicle := range v {
+			data[key] = vehicleToVehicleJSON(vehicle)
 		}
+
 		response.JSON(w, http.StatusOK, map[string]any{
 			"message": "success",
 			"data":    data,
 		})
+	}
+}
+
+func (h *VehicleDefault) GetByTransmissionType() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		transmissionType := chi.URLParam(r, "type")
+
+		vehicles, err := h.sv.GetByTransmissionTypeService(transmissionType)
+
+		if err != nil {
+			switch {
+			case errors.Is(err, service.ErrVehiclesNotFound):
+				resBody := responseAPI.ResponseBody{
+					Error:   true,
+					Message: err.Error(),
+				}
+
+				response.JSON(w, http.StatusNotFound, resBody)
+			default:
+				resBody := responseAPI.ResponseBody{
+					Error:   true,
+					Message: "Internal error server",
+				}
+				response.JSON(w, http.StatusInternalServerError, resBody)
+			}
+
+			return
+		}
+
+		data := make(map[int]VehicleJSON, len(vehicles))
+
+		for key, vehicle := range vehicles {
+			data[key] = vehicleToVehicleJSON(vehicle)
+		}
+
+		resBody := responseAPI.ResponseBody{
+			Data: data,
+		}
+
+		response.JSON(w, http.StatusOK, resBody)
 	}
 }

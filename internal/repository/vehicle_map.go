@@ -1,6 +1,9 @@
 package repository
 
-import "app/internal"
+import (
+	"app/internal"
+	"strings"
+)
 
 // NewVehicleMap is a function that returns a new instance of VehicleMap
 func NewVehicleMap(db map[int]internal.Vehicle) *VehicleMap {
@@ -28,4 +31,16 @@ func (r *VehicleMap) FindAll() (v map[int]internal.Vehicle, err error) {
 	}
 
 	return
+}
+
+func (r *VehicleMap) FindManyByTransmissionTypeRepository(transmissionType string) (map[int]internal.Vehicle, error) {
+	filteredVehicle := make(map[int]internal.Vehicle)
+
+	for _, vehicle := range r.db {
+		if strings.EqualFold(vehicle.Transmission, transmissionType) {
+			filteredVehicle[vehicle.Id] = vehicle
+		}
+	}
+
+	return filteredVehicle, nil
 }

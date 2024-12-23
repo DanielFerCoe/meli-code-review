@@ -1,6 +1,13 @@
 package service
 
-import "app/internal"
+import (
+	"app/internal"
+	"errors"
+)
+
+var (
+	ErrVehiclesNotFound = errors.New("Vehicles not found")
+)
 
 // NewVehicleDefault is a function that returns a new instance of VehicleDefault
 func NewVehicleDefault(rp internal.VehicleRepository) *VehicleDefault {
@@ -17,4 +24,18 @@ type VehicleDefault struct {
 func (s *VehicleDefault) FindAll() (v map[int]internal.Vehicle, err error) {
 	v, err = s.rp.FindAll()
 	return
+}
+
+func (s *VehicleDefault) GetByTransmissionTypeService(transmissionType string) (map[int]internal.Vehicle, error) {
+	vehicles, err := s.rp.FindManyByTransmissionTypeRepository(transmissionType)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(vehicles) == 0 {
+		return nil, ErrVehiclesNotFound
+	}
+
+	return vehicles, nil
 }

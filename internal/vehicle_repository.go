@@ -4,4 +4,5 @@ package internal
 type VehicleRepository interface {
 	// FindAll is a method that returns a map of all vehicles
 	FindAll() (v map[int]Vehicle, err error)
+	FindManyByTransmissionTypeRepository(transmissionType string) (map[int]Vehicle, error)
 }
